@@ -84,6 +84,7 @@ real = Regex(r"[+-]?\d+\.\d*([eE][+-]?\d+)?").setParseAction(lambda tokens: floa
 token = Word(alphanums + "-./_:*+=!<>")
 
 #simpleString = real | base64_ | raw | smtpin | decimal | token | hexadecimal | qString
+# get rid of real, base64_ processing passes to speed up parsing a bit
 simpleString = raw | smtpin | decimal | token | hexadecimal | qString
 
 display = LBRK + simpleString + RBRK
@@ -174,7 +175,6 @@ def netRename(netlist, renamed):
                 renamed.append(netRename(elem, []))
             else:
                 if( elem[0] == 'rename' ):
-#                    print elem
                     renamed.append( elem[1] )
                 else:
                     renamed.append(elem)
@@ -211,18 +211,14 @@ def netExtract1(netlist, netPinsList):
                     nextIDcode = "rename"
                 else:
                     nextID = 0
-#                    nextIDcode = ""
                 continue
             else:
                 nextID = 0
                 if( nextIDcode == "Net" ):
-#                    print expr
                     netPinsList.append([expr])
                 elif( nextIDcode == "rename" ):
-#                    print expr
                     netPinsList.append([expr])
                 elif( nextIDcode == "PortRef" ):
-#                    import pdb; pdb.set_trace()
                     if( len(netPinsList[-1:][0]) > 1 ):
                         netPinsList[-1][1].append([re.sub('&','',expr)])
                     else:
@@ -232,14 +228,6 @@ def netExtract1(netlist, netPinsList):
                         netPinsList[-1:][0][-1][-1].append(expr)
                     else:
                         netPinsList[-1:][0][-1][0].append(expr)
-#                print " "*level*2, expr
-
-
-#                    if( isinstance(netPinsList[-1:][0][-1], list) and (netPinsList[-1:][0][-1] != []) ):
-#                        netPinsList[-1:][0][1].append([re.sub('&','',expr)])
-#                        netPinsList[-1:][0][-1].append(re.sub('&','',expr))
-#                    else:
-#                        netPinsList[-1:][0].append([[re.sub('&','',expr)]])
 
 
 # top function for the above recursive call. Sort of inelegant but meh.
@@ -259,7 +247,6 @@ def netPrintUCF(netlist, designator):
         printLine = ''
         printStd = ''
         for pins in listofpins:
-#            import pdb; pdb.set_trace()
             if( pins[1] == designator ):
                 if( usedDesignators.count( node[0] ) == 0 ):
                     printLine = 'NET \"' + node[0] + '\" LOC = ' + pins[0] + ';'
@@ -300,6 +287,17 @@ for t in alltests:
     print
 
 ### actual code
+
+# we want to assemble data into the following structure:
+# net_name : pin_name [pin_name ...]
+# based upon the additional criteria of an identifier for the refreence designator
+
+# so as we recurse:
+# - we will first hit a "Net" keyword -> next token is net_name
+# - we will then search for an InstanceRef keyword -> next token is reference_designator; if match add to net_name
+# 
+# once we have assembled this list, we will take it and generate UCF-format print output
+
 if( not (len(sys.argv) == 3  or len(sys.argv) == 4) ):
     print "Usage: " + sys.argv[0] + " <edif_filename> <fpga_designator> [output filename]"
     sys.exit(0)
@@ -315,23 +313,15 @@ edif = f.read()
 
 iostandardMaps = getMapping()
 
-#print edif
-
 sys.stderr.write( "parsing " + filename + " (may take a while for large files)...\n" )
 sexpr = sexp.parseString(edif, parseAll=True)
 netlist = sexpr.asList()
 
-#netPrint1(netlist, 0)
-
 #print "processing rename elements..."
 renamed = netRename(netlist, [])
-#import pdb; pdb.set_trace()
 
 #print "extracting net names..."
-
 pinlist = netExtractTop(renamed)
-
-#pprint.pprint(pinlist)
 
 #print "printing netlist..."
 pinlist.sort() # sorts the netlist names so it's a little more human readable
@@ -344,15 +334,3 @@ netPrintUCF(pinlist, designator)
 
 #### end of code
 
-
-# other notes:
-
-# we want to assemble data into the following structure:
-# net_name : pin_name [pin_name ...]
-# based upon the additional criteria of an identifier for the refreence designator
-
-# so as we recurse:
-# - we will first hit a "Net" keyword -> next token is net_name
-# - we will then search for an InstanceRef keyword -> next token is reference_designator; if match add to net_name
-# 
-# once we have assembled this list, we will take it and generate UCF-format print output
