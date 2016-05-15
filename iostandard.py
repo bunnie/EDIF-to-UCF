@@ -6,9 +6,15 @@
     Therefore, the last item should always be ".*" as the default match.
 '''
 
-iostandardMaps = [ ("^F_.*DQS_[NP]$", 'DIFF_SSTL18_II'),     # matches nets starting with F_ and ending with DQS_N or DQS_P
-                   ("F_.*CLK_[NP]$", 'DIFF_SSTL18_II'),      # matches nets starting with F_ and ending with CLK_N or CLK_P
-                   ("^F_", 'SSTL18_II'),                     # matches all nets starting with F_
+#iostandardMaps = [ ("^F_.*DQS_[NP]$", 'DIFF_SSTL18_II'),     # matches nets starting with F_ and ending with DQS_N or DQS_P
+#                   ("F_.*CLK_[NP]$", 'DIFF_SSTL18_II'),      # matches nets starting with F_ and ending with CLK_N or CLK_P
+#                   ("^F_", 'SSTL18_II'),                     # matches all nets starting with F_
+#                   ("_[NP]$", 'TMDS_33'),                    # matches all remaining nets with _N or _P at the end. See below.
+#                   (".*", 'LVCMOS33') ]                      # this is a "default" mapping, everything else gets this
+
+iostandardMaps = [ ("^DDR3_.*DQS_[NP]$", 'DIFF_SSTL15'),  # matches nets starting with DDR3_ and ending with DQS_N or DQS_P
+                   ("DDR3_.*CLK_[NP]$", 'DIFF_SSTL15'),   # matches nets starting with DDR3_ and ending with CLK_N or CLK_P
+                   ("^DDR3_", 'SSTL15'),                     # matches all nets starting with DDR3_
                    ("_[NP]$", 'TMDS_33'),                    # matches all remaining nets with _N or _P at the end. See below.
                    (".*", 'LVCMOS33') ]                      # this is a "default" mapping, everything else gets this
 
